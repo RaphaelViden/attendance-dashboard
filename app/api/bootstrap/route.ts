@@ -1,15 +1,6 @@
-import { requireAdmin } from "@/lib/auth";
-import { getBootstrap } from "@/lib/repository";
-import { jsonError, jsonOk } from "@/lib/http";
+import { NextResponse } from "next/server";
+import { getBootstrap } from "@/lib/store";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
-  try {
-    requireAdmin(request);
-    return jsonOk(await getBootstrap());
-  } catch (error) {
-    return jsonError(error, "Gagal mengambil data dashboard.");
-  }
+export async function GET() {
+  return NextResponse.json(getBootstrap());
 }
