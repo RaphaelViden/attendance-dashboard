@@ -1,34 +1,42 @@
-# Kantor Presence Dashboard
+# TAPPRESENSI RFID Fullstack Next.js
 
-Dashboard presensi profesional untuk project RFID kantor. Stack:
+Gabungan konsep dari:
 
-- Next.js App Router
-- TypeScript
-- Supabase-ready database
-- Supabase REST-ready without extra client dependency
-- Vercel deployment
-- Role karyawan/admin
-- Export `.xlsx` khusus admin
+1. `tappresensi_-rfid-attendance-portal.zip`: UI login, topbar, admin dashboard style, ESP32 simulator, employee manager, backup/log concept.
+2. `attendance-dashboard-shift-4tap-export-v3.zip`: model presensi 4 tap, shift kerja kantor, divisi kantor, export spreadsheet berdasarkan rentang tanggal.
 
-## Fitur
+Aplikasi ini siap dijalankan sebagai Next.js fullstack app di Vercel atau Render Web Service.
 
-### Karyawan
+## Fitur utama
 
-- Melihat dashboard presensi.
-- Melihat rekap Senin-Minggu.
-- Melihat rekap bulanan.
-- Tidak bisa edit presensi manual.
-- Tidak bisa download rekap bulanan.
+- Login admin.
+- Dashboard admin.
+- CRUD karyawan dan RFID card.
+- Divisi: Casier, Kitchen, Produksi, Part-time.
+- Shift kerja:
+  - Pagi: 08.00-16.00
+  - Siang: 14.00-22.00
+  - Middle: 12.00-20.00
+  - Middle Closing: 12.00-22.00
+  - Pagi Middle: 08.00-20.00
+  - Fullday: 08.00-22.00
+- Presensi 4 tap:
+  1. Masuk
+  2. Mulai Istirahat
+  3. Selesai Istirahat
+  4. Pulang
+- Perhitungan jam kerja:
+  - Masuk sampai Mulai Istirahat
+  - ditambah Selesai Istirahat sampai Pulang
+- Endpoint RFID untuk ESP32/Raspberry Pi:
+  - `POST /api/device/tap`
+  - alias: `POST /api/rfid/tap`
+- Export XLSX berdasarkan tanggal mulai dan tanggal akhir.
+- Backup JSON.
+- Mode demo-memory tanpa Supabase.
+- Mode production dengan Supabase opsional.
 
-### Admin
-
-- Melihat seluruh dashboard.
-- Koreksi/checklist presensi manual.
-- Download rekap bulanan `.xlsx`.
-- Monitoring device RFID.
-- Nanti dapat dikembangkan untuk registrasi kartu RFID.
-
-## Jalankan Lokal
+## Jalankan lokal
 
 ```bash
 npm install
@@ -41,103 +49,108 @@ Buka:
 http://localhost:3000
 ```
 
-## Mode Demo
+Login demo:
 
-Project ini langsung bisa berjalan tanpa Supabase karena memakai data demo.
+```text
+Username: admin
+Password: admin123
+```
 
-Gunakan tombol role di kanan atas:
+## Environment variables
 
-- `Karyawan`
-- `Admin`
+Buat `.env.local` dari `.env.example`.
 
-Untuk melihat fitur export dan koreksi manual, pilih `Admin`.
+```env
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+AUTH_SECRET=change-this-to-a-long-random-secret
+DEVICE_SECRET=DEV-SECRET-CHANGE-ME
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Jika `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` kosong, aplikasi berjalan dalam demo-memory mode. Data demo-memory tidak cocok untuk production karena data dapat hilang ketika server restart atau serverless function cold start.
 
 ## Setup Supabase
 
-1. Buat project baru di Supabase.
-2. Buka `SQL Editor`.
-3. Copy isi:
-
-```text
-supabase/schema.sql
-```
-
-4. Jalankan SQL.
-5. Ambil Project URL dan Publishable/Anon Key dari Supabase.
-6. Buat file `.env.local`:
-
-```bash
-cp .env.example .env.local
-```
-
-Isi:
+1. Buat project Supabase.
+2. Buka SQL Editor.
+3. Jalankan file `supabase/schema.sql`.
+4. Ambil `Project URL` dan `service_role key`.
+5. Isi environment variable:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-publishable-or-anon-key
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=xxxxx
 ```
 
-Catatan: versi UI demo ini sudah Supabase-ready, tetapi query live dapat ditambahkan setelah data RFID asli mulai masuk.
+Jangan taruh service role key di frontend. Key ini hanya dipakai server-side API routes.
 
-## Deploy ke Vercel
+## Payload ESP32/Raspberry Pi
 
-1. Push folder ini ke GitHub.
-2. Buka Vercel.
-3. Klik `Add New Project`.
-4. Import repository.
-5. Framework akan terdeteksi sebagai `Next.js`.
-6. Tambahkan Environment Variables:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-```
-
-7. Klik `Deploy`.
-
-## Struktur Data Utama
-
-| Tabel | Fungsi |
-|---|---|
-| `profiles` | Role user: karyawan/admin |
-| `employees` | Data karyawan |
-| `rfid_cards` | Mapping UID RFID ke karyawan |
-| `devices` | Status alat RFID |
-| `attendance_logs` | Data presensi |
-| `attendance_audit_logs` | Audit perubahan admin |
-
-## Integrasi ESP32/Raspberry Pi
-
-Alur alat:
+Endpoint:
 
 ```text
-Tap RFID -> baca UID -> simpan lokal -> kirim ke Supabase -> dashboard update
+POST /api/device/tap
 ```
 
-Minimal payload dari alat:
+Header:
+
+```text
+x-device-secret: DEV-SECRET-CHANGE-ME
+Content-Type: application/json
+```
+
+Body:
 
 ```json
 {
   "rfid_uid": "B3:3D:1F:D3",
-  "attendance_date": "2026-07-01",
-  "check_in": "08:12",
-  "status": "present",
-  "source": "rfid",
-  "device_id": "attendance-esp32-001"
+  "device_id": "attendance-esp32-001",
+  "device_name": "Main Entrance Reader",
+  "power_mode": "AC",
+  "battery": 92
 }
 ```
 
-Untuk production, sebaiknya alat tidak langsung memakai service role key. Gunakan salah satu:
+Urutan tap akan ditentukan otomatis berdasarkan jumlah tap karyawan pada tanggal tersebut.
 
-- Supabase Edge Function sebagai endpoint alat.
-- API route Next.js dengan device token.
-- RLS insert-only policy khusus device.
+## Deploy ke Vercel
 
-## Prioritas Pengembangan Berikutnya
+1. Push project ke GitHub.
+2. Import repo ke Vercel.
+3. Framework: Next.js.
+4. Isi environment variables.
+5. Deploy.
 
-1. Supabase Auth login asli.
-2. Query live dari tabel Supabase.
-3. Registrasi kartu RFID dari dashboard.
-4. Device heartbeat.
-5. Export detail bulanan per karyawan.
-6. Audit log untuk setiap koreksi manual.
+## Deploy ke Render.com
+
+Gunakan Web Service, bukan Static Site, karena aplikasi memakai API routes dan server-side logic.
+
+Pengaturan manual:
+
+```text
+Runtime: Node
+Build Command: npm install && npm run build
+Start Command: npm run start
+```
+
+Project juga menyertakan `render.yaml` untuk Blueprint.
+
+## Endpoint API
+
+- `POST /api/auth/login`
+- `GET /api/bootstrap`
+- `GET /api/employees`
+- `POST /api/employees`
+- `PUT /api/employees/:id`
+- `DELETE /api/employees/:id`
+- `POST /api/attendance/manual`
+- `POST /api/device/tap`
+- `POST /api/rfid/tap`
+- `POST /api/simulator/tap`
+- `GET /api/export?start=YYYY-MM-DD&end=YYYY-MM-DD`
+- `GET /api/system/logs`
+- `GET /api/system/backups`
+- `POST /api/system/backup/trigger`
+- `GET /api/system/backup/download`
