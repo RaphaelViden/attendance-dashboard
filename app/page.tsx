@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import AttendanceLast30Days from "@/src/components/charts/AttendanceLast30Days";
 import {
   Activity,
   BadgeCheck,
@@ -221,25 +222,18 @@ function VisualCards({ data }: { data: BootstrapData }) {
     return employee && attendanceStatus(item, employee.shift) === "Terlambat";
   }).length;
   const absent = Math.max(0, data.employees.length - present);
-  const trend = Array.from({ length: 30 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (29 - index));
-    const iso = date.toISOString().slice(0, 10);
-    const value = data.attendance.filter((item) => item.date === iso && item.masuk).length;
-    return {
-      iso,
-      label: new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit" }).format(date),
-      value
-    };
-  });
-  const maxY = Math.max(4, ...trend.map((item) => item.value));
-  const points = trend
-    .map((item, index) => {
-      const x = 36 + (index / Math.max(1, trend.length - 1)) * 888;
-      const y = 240 - (item.value / maxY) * 205;
-      return `${x},${y}`;
-    })
-    .join(" ");
+
+  /* Build 30-day trend data for the Recharts chart */
+  const trendData = useMemo(() => {
+    return Array.from({ length: 30 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - index));
+      const iso = date.toISOString().slice(0, 10);
+      const value = data.attendance.filter((item) => item.date === iso && item.masuk).length;
+      return { date: iso, attendance: value };
+    });
+  }, [data.attendance]);
+
   const total = Math.max(1, present + late + absent);
   const presentDeg = (present / total) * 360;
   const lateDeg = (late / total) * 360;
@@ -250,30 +244,8 @@ function VisualCards({ data }: { data: BootstrapData }) {
 
   return (
     <div className="visual-grid">
-      <section className="panel">
-        <div className="panel-head"><div><h2>Attendance - Last 30 Days</h2><p className="muted-copy">Unique employees who tapped per day.</p></div></div>
-        <div className="trend-card" aria-label="Attendance trend">
-          <div className="trend-grid">
-            {[4, 3, 2, 1, 0].map((tick) => <span key={tick}>{tick}</span>)}
-          </div>
-          <svg className="trend-line" viewBox="0 0 960 260" preserveAspectRatio="none" aria-hidden="true">
-            <polyline points={points} />
-          </svg>
-          <div className="trend-points">
-            {trend.map((item, index) => {
-              const left = (index / Math.max(1, trend.length - 1)) * 100;
-              const bottom = (item.value / maxY) * 78;
-              return (
-                <button className="trend-point" key={item.iso} style={{ left: `${left}%`, bottom: `${bottom}%` }} type="button">
-                  <span className="chart-tooltip"><b>{item.label}</b><small>attendance : {item.value}</small></span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="trend-labels">
-            {trend.filter((_, index) => index % 5 === 0 || index === trend.length - 1).map((item) => <span key={item.iso}>{item.label}</span>)}
-          </div>
-        </div>
+      <section className="panel attendance-chart-panel">
+        <AttendanceLast30Days rawData={trendData} />
       </section>
       <section className="panel">
         <div className="panel-head"><div><h2>Attendance Breakdown</h2><p className="muted-copy">Today's distribution.</p></div></div>

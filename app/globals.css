@@ -198,6 +198,60 @@ code, .api-box { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; ba
 .scrim { display: none; position: fixed; inset: 0; z-index: 30; border: 0; background: rgba(2,6,23,.36); }
 .nav-open .scrim { display: block; }
 
+/* ── Attendance Chart (Recharts) ── */
+.attendance-chart-panel { padding: 0; overflow: hidden; }
+.attendance-chart-card { padding: 20px 24px; }
+.attendance-chart-header { margin-bottom: 4px; }
+.attendance-chart-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.attendance-chart-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.attendance-chart-body { width: 100%; height: 260px; }
+
+/* Tooltip matching the spec image exactly */
+.attendance-chart-tooltip {
+  min-width: 104px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.att-tooltip-date {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.att-tooltip-value {
+  display: block;
+  font-size: 13px;
+  color: #1E3A8A;
+  white-space: nowrap;
+}
+
+/* Recharts overrides for consistent look */
+.attendance-chart-body .recharts-cartesian-grid-horizontal line {
+  stroke-dasharray: 4 4;
+  stroke: #E5E7EB;
+}
+.attendance-chart-body .recharts-xAxis .recharts-cartesian-axis-line {
+  stroke: #1E3A8A;
+}
+
+/* Dark mode tooltip adjustments */
+.dark .attendance-chart-tooltip {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+.dark .att-tooltip-date { color: var(--text); }
+.dark .att-tooltip-value { color: #60a5fa; }
+
 @media (max-width: 1180px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .summary-grid, .employee-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
