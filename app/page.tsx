@@ -1,24 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BadgeCheck,
+  Bell,
   CalendarDays,
+  Clock3,
   CreditCard,
+  Database,
   Download,
+  FileDown,
+  FileSpreadsheet,
   Fingerprint,
   LayoutDashboard,
   LogIn,
-  LogOut,
-  Menu,
   Moon,
+  PanelLeft,
   Plus,
+  Radio,
   RefreshCcw,
   Search,
   Settings,
   ShieldCheck,
   Sun,
+  UserX,
   Users,
   Wifi
 } from "lucide-react";
@@ -191,50 +197,109 @@ function SummaryCards({ data }: { data: BootstrapData }) {
   const completed = rows.filter((item) => item.pulang).length;
   const absent = Math.max(0, data.employees.length - present);
   const tapCount = rows.reduce((total, item) => total + [item.masuk, item.mulaiIstirahat, item.selesaiIstirahat, item.pulang].filter(Boolean).length, 0);
+  const cards = [
+    { label: "Total Employees", value: data.employees.length, hint: "Active headcount", tone: "tone-primary", accent: "#2563eb", icon: Users },
+    { label: "Present Today", value: present, hint: `${absent} belum tap masuk`, tone: "tone-success", accent: "#16a34a", icon: BadgeCheck },
+    { label: "Late Today", value: late, hint: "berdasarkan shift", tone: "tone-warning", accent: "#d97706", icon: Clock3 },
+    { label: "Absent", value: absent, hint: "belum tercatat", tone: "tone-danger", accent: "#dc2626", icon: UserX },
+    { label: "RFID Tap Today", value: tapCount, hint: `${completed} sudah pulang`, tone: "tone-info", accent: "#2563eb", icon: CreditCard },
+    { label: "Device Status", value: data.device.online ? "Online" : "Offline", hint: "ESP32 fleet", tone: "tone-success", accent: "#16a34a", icon: Radio }
+  ];
 
   return (
     <section className="summary-grid">
-      <article className="summary-card tone-primary"><Users /><span>Total Employees</span><strong>{data.employees.length}</strong><small>Active headcount</small></article>
-      <article className="summary-card tone-success"><BadgeCheck /><span>Present Today</span><strong>{present}</strong><small>{absent} belum tap masuk</small></article>
-      <article className="summary-card tone-warning"><Activity /><span>Late Today</span><strong>{late}</strong><small>berdasarkan shift</small></article>
-      <article className="summary-card tone-danger"><CalendarDays /><span>Absent</span><strong>{absent}</strong><small>belum tercatat</small></article>
-      <article className="summary-card tone-info"><CreditCard /><span>RFID Tap Today</span><strong>{tapCount}</strong><small>{completed} sudah pulang</small></article>
-      <article className="summary-card tone-muted"><Wifi /><span>Device Status</span><strong>{data.device.online ? "Online" : "Offline"}</strong><small>ESP32 fleet</small></article>
+      {cards.map((card) => {
+        const Icon = card.icon;
+        return (
+          <article className={`summary-card glow-card ${card.tone}`} key={card.label} style={{ "--card-accent": card.accent } as CSSProperties}>
+            <div>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.hint}</small>
+            </div>
+            <i className="summary-icon"><Icon size={22} /></i>
+          </article>
+        );
+      })}
     </section>
   );
 }
 
 function VisualCards({ data }: { data: BootstrapData }) {
-  const present = data.attendance.filter((item) => item.masuk).length;
-  const late = data.attendance.filter((item) => {
+  const todayRows = data.attendance.filter((item) => item.date === todayISO());
+  const present = todayRows.filter((item) => item.masuk).length;
+  const late = todayRows.filter((item) => {
     const employee = data.employees.find((emp) => emp.id === item.employeeId);
     return employee && attendanceStatus(item, employee.shift) === "Terlambat";
   }).length;
   const absent = Math.max(0, data.employees.length - present);
-  const max = Math.max(1, present, late, absent);
+  const trend = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - index));
+    const iso = date.toISOString().slice(0, 10);
+    const value = data.attendance.filter((item) => item.date === iso && item.masuk).length;
+    return {
+      iso,
+      label: new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit" }).format(date),
+      value
+    };
+  });
+  const maxY = Math.max(4, ...trend.map((item) => item.value));
+  const points = trend
+    .map((item, index) => {
+      const x = 36 + (index / Math.max(1, trend.length - 1)) * 888;
+      const y = 240 - (item.value / maxY) * 205;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const total = Math.max(1, present + late + absent);
+  const presentDeg = (present / total) * 360;
+  const lateDeg = (late / total) * 360;
+  const donutStyle = {
+    "--present-deg": `${presentDeg}deg`,
+    "--late-deg": `${presentDeg + lateDeg}deg`
+  } as CSSProperties;
 
   return (
     <div className="visual-grid">
       <section className="panel">
         <div className="panel-head"><div><h2>Attendance - Last 30 Days</h2><p className="muted-copy">Unique employees who tapped per day.</p></div></div>
-        <div className="line-chart" aria-label="Attendance trend">
-          {Array.from({ length: 18 }).map((_, index) => <i key={index} style={{ height: `${28 + ((index * 19) % 58)}%` }} />)}
+        <div className="trend-card" aria-label="Attendance trend">
+          <div className="trend-grid">
+            {[4, 3, 2, 1, 0].map((tick) => <span key={tick}>{tick}</span>)}
+          </div>
+          <svg className="trend-line" viewBox="0 0 960 260" preserveAspectRatio="none" aria-hidden="true">
+            <polyline points={points} />
+          </svg>
+          <div className="trend-points">
+            {trend.map((item, index) => {
+              const left = (index / Math.max(1, trend.length - 1)) * 100;
+              const bottom = (item.value / maxY) * 78;
+              return (
+                <button className="trend-point" key={item.iso} style={{ left: `${left}%`, bottom: `${bottom}%` }} type="button">
+                  <span className="chart-tooltip"><b>{item.label}</b><small>attendance : {item.value}</small></span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="trend-labels">
+            {trend.filter((_, index) => index % 5 === 0 || index === trend.length - 1).map((item) => <span key={item.iso}>{item.label}</span>)}
+          </div>
         </div>
       </section>
       <section className="panel">
         <div className="panel-head"><div><h2>Attendance Breakdown</h2><p className="muted-copy">Today's distribution.</p></div></div>
-        <div className="breakdown">
-          {[
-            { label: "Present", value: present, className: "bar-success" },
-            { label: "Late", value: late, className: "bar-warning" },
-            { label: "Absent", value: absent, className: "bar-danger" }
-          ].map((bar) => (
-            <div key={bar.label}>
-              <span>{bar.label}</span>
-              <b>{bar.value}</b>
-              <em><i className={bar.className} style={{ width: `${(bar.value / max) * 100}%` }} /></em>
-            </div>
-          ))}
+        <div className="donut-wrap">
+          <div className="donut-chart" style={donutStyle}>
+            <button className="donut-hotspot hotspot-present" type="button"><span>Present : {present}</span></button>
+            <button className="donut-hotspot hotspot-late" type="button"><span>Late : {late}</span></button>
+            <button className="donut-hotspot hotspot-absent" type="button"><span>Absent : {absent}</span></button>
+          </div>
+          <div className="donut-legend">
+            <span><i className="legend-present" />Present</span>
+            <span><i className="legend-late" />Late</span>
+            <span><i className="legend-absent" />Absent</span>
+          </div>
         </div>
       </section>
     </div>
@@ -468,8 +533,14 @@ export default function App() {
 
   if (!session) return <LoginView onLogin={setSession} />;
 
+  async function handleSignOut() {
+    const supabase = getSupabaseBrowser();
+    await supabase?.auth.signOut();
+    setSession(null);
+  }
+
   return (
-    <div className={dark ? "app dark" : "app"}>
+    <div className={`${dark ? "app dark" : "app"} ${menuOpen ? "nav-open" : "nav-closed"}`}>
       <aside className={menuOpen ? "sidebar open" : "sidebar"}>
         <div className="side-brand"><span><Fingerprint size={19} /></span><div><b>Attendify HRIS</b><small>Attendance System</small></div></div>
         <nav>
@@ -488,20 +559,30 @@ export default function App() {
 
       <main className="main">
         <header className="topbar">
-          <button className="icon-btn" aria-label="Buka menu" onClick={() => setMenuOpen(true)}><Menu size={20} /></button>
+          <button className="topbar-menu" aria-label={menuOpen ? "Sembunyikan menu" : "Tampilkan menu"} onClick={() => setMenuOpen((value) => !value)}><PanelLeft size={18} /></button>
           <div className="company-id"><b>PT Attendify Nusantara</b><small>Employee Attendance Portal</small></div>
-          <div className="search-box"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search employee, card, or device..." /></div>
-          <span className="connection-dot"><Wifi size={14} /> ESP32 <i className={data.device.online ? "online" : "offline"} /></span>
-          <span className="connection-dot"><ShieldCheck size={14} /> DB <i className="online" /></span>
+          <div className="search-box"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search employees, RFID, devices..." /></div>
+          <span className="connection-dot"><Radio size={14} /> ESP32 <i className={data.device.online ? "online" : "offline"} /></span>
+          <span className="connection-dot"><Database size={14} /> DB <i className="online" /></span>
+          <span className="connection-dot"><Wifi size={14} /> API <i className="online" /></span>
           <button className="icon-btn" aria-label="Theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
-          <button className="logout-btn" onClick={() => setSession(null)}><LogOut size={16} /> Logout</button>
+          <button className="icon-btn bell-btn" aria-label="Notifications"><Bell size={18} /></button>
+          <button className="avatar-btn" onClick={handleSignOut} title="Logout">{initials(session.name || "User")}</button>
         </header>
 
         <div className="content">
-          <div className="page-title">
-            <p className="eyebrow">Overview</p>
-            <h1>{active === "dashboard" ? "Dashboard" : navItems.find((item) => item.key === active)?.label}</h1>
-            <p className="muted-copy">{active === "dashboard" ? "Real-time attendance and device overview." : "RFID attendance management portal."}</p>
+          <div className="dashboard-title-row">
+            <div className="page-title">
+              <h1>{active === "dashboard" ? "Dashboard" : navItems.find((item) => item.key === active)?.label}</h1>
+              <p className="muted-copy">{active === "dashboard" ? "Real-time attendance and device overview." : "RFID attendance management portal."}</p>
+            </div>
+            {active === "dashboard" ? (
+              <div className="dashboard-actions">
+                <a className="action-btn" href={`/api/export?start=${todayISO()}&end=${todayISO()}`}><FileSpreadsheet size={16} />Export XLSX</a>
+                <button className="action-btn" type="button"><FileDown size={16} />Export PDF</button>
+                <button className="action-btn primary-action" onClick={load} type="button"><RefreshCcw size={16} />Refresh</button>
+              </div>
+            ) : null}
           </div>
 
           {active === "dashboard" ? (
