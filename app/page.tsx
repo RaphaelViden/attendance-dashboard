@@ -14,7 +14,6 @@ import {
   FileSpreadsheet,
   Fingerprint,
   LayoutDashboard,
-  LogIn,
   Moon,
   PanelLeft,
   Plus,
@@ -124,25 +123,6 @@ function LoginView({ onLogin }: { onLogin: (user: SessionUser) => void }) {
 
   return (
     <main className="auth-shell">
-      <section className="auth-hero">
-        <div className="brand-mark">
-          <Fingerprint size={22} />
-          <span>Attendify HRIS</span>
-        </div>
-        <div>
-          <p className="eyebrow">Enterprise Attendance Portal</p>
-          <h1>Modern attendance management for ESP32 + RFID.</h1>
-          <p className="hero-copy">
-            Real-time tap events, powerful reporting, and role-based access. Built in Next.js with Supabase Auth and four-tap workday logic.
-          </p>
-        </div>
-        <div className="hero-grid">
-          <div><b>4 Tap</b><span>Masuk, istirahat, kembali, pulang</span></div>
-          <div><b>Supabase</b><span>Google OAuth and realtime database</span></div>
-          <div><b>RFID</b><span>ESP32 endpoint ready</span></div>
-        </div>
-      </section>
-
       <section className="auth-card">
         <div className="auth-heading">
           <h2>Welcome</h2>
@@ -157,27 +137,35 @@ function LoginView({ onLogin }: { onLogin: (user: SessionUser) => void }) {
           {mode === "signup" ? (
             <label>
               Nama lengkap
-              <input name="fullName" placeholder="Nama karyawan" required />
+              <input name="fullName" required />
             </label>
           ) : null}
           <label>
             Email
-            <input name="email" type="email" placeholder="nama@kantor.com" required />
+            <input name="email" type="email" required />
           </label>
           <label>
             Password
-            <input name="password" type="password" placeholder="Minimal 8 karakter" required />
+            <input name="password" type="password" required />
           </label>
           <button className="primary-btn" disabled={busy} type="submit">
-            <LogIn size={18} /> {mode === "signin" ? "Login" : "Create Account"}
+            {mode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
 
-        <div className="divider"><span>atau</span></div>
+        <div className="divider"><span>OR</span></div>
         <button className="outline-btn" disabled={busy} onClick={handleGoogle}>
-          <span className="google-dot">G</span> Continue with Google
+          <span className="google-dot" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="#4285F4" d="M21.6 12.23c0-.72-.06-1.24-.18-1.78H12v3.24h5.53c-.11.8-.72 2.01-2.07 2.82l-.02.11 3 2.26.21.02c1.93-1.74 2.95-4.3 2.95-6.67z" />
+              <path fill="#34A853" d="M12 21.75c2.76 0 5.07-.88 6.76-2.4l-3.22-2.48c-.86.58-2.02.99-3.54.99-2.7 0-4.99-1.74-5.8-4.15l-.12.01-3.12 2.35-.04.11c1.68 3.25 5.12 5.57 9.08 5.57z" />
+              <path fill="#FBBC05" d="M6.2 13.71a5.89 5.89 0 0 1-.31-1.86c0-.65.11-1.28.3-1.86l-.01-.13-3.16-2.39-.1.05A9.53 9.53 0 0 0 1.9 11.85c0 1.55.38 3.02 1.02 4.32l3.28-2.46z" />
+              <path fill="#EB4335" d="M12 5.84c1.92 0 3.21.8 3.95 1.47l2.88-2.74C17.06 2.97 14.76 2 12 2 8.04 2 4.6 4.32 2.92 7.52l3.27 2.47c.82-2.41 3.11-4.15 5.81-4.15z" />
+            </svg>
+          </span>
+          Continue with Google
         </button>
-        <button className="ghost-btn" onClick={() => onLogin({ name: "Admin Kantor", email: "admin@kantor.local", role: "admin", provider: "demo" })}>
+        <button className="ghost-btn auth-demo" onClick={() => onLogin({ name: "Admin Kantor", email: "admin@kantor.local", role: "admin", provider: "demo" })}>
           Demo Admin Lokal
         </button>
         {message ? <p className="auth-message">{message}</p> : null}
@@ -444,6 +432,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [query, setQuery] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   async function load() {
     const supabase = getSupabaseBrowser();
@@ -562,12 +551,28 @@ export default function App() {
           <button className="topbar-menu" aria-label={menuOpen ? "Sembunyikan menu" : "Tampilkan menu"} onClick={() => setMenuOpen((value) => !value)}><PanelLeft size={18} /></button>
           <div className="company-id"><b>PT Attendify Nusantara</b><small>Employee Attendance Portal</small></div>
           <div className="search-box"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search employees, RFID, devices..." /></div>
-          <span className="connection-dot"><Radio size={14} /> ESP32 <i className={data.device.online ? "online" : "offline"} /></span>
-          <span className="connection-dot"><Database size={14} /> DB <i className="online" /></span>
-          <span className="connection-dot"><Wifi size={14} /> API <i className="online" /></span>
-          <button className="icon-btn" aria-label="Theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
-          <button className="icon-btn bell-btn" aria-label="Notifications"><Bell size={18} /></button>
-          <button className="avatar-btn" onClick={handleSignOut} title="Logout">{initials(session.name || "User")}</button>
+          <div className="topbar-right">
+            <span className="connection-dot"><Radio size={14} /> ESP32 <i className={data.device.online ? "online" : "offline"} /></span>
+            <span className="connection-dot"><Database size={14} /> DB <i className="online" /></span>
+            <span className="connection-dot"><Wifi size={14} /> API <i className="online" /></span>
+            <button className="icon-btn" aria-label="Theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+            <button className="icon-btn bell-btn" aria-label="Notifications"><Bell size={18} /></button>
+            <div className="profile-menu">
+              <button className="avatar-btn" onClick={() => setProfileOpen((value) => !value)} aria-expanded={profileOpen} aria-label="Buka menu profil">
+                {initials(session.name || "User")}
+              </button>
+              {profileOpen ? (
+                <div className="profile-popover">
+                  <div className="profile-popover-head">
+                    <b>{session.name}</b>
+                    <small>{session.email || "No email connected"}</small>
+                  </div>
+                  <button type="button" onClick={() => { setActive("settings"); setProfileOpen(false); }}>Settings</button>
+                  <button type="button" className="signout-item" onClick={handleSignOut}>Sign out</button>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </header>
 
         <div className="content">
