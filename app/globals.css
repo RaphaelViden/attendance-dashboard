@@ -229,6 +229,37 @@ a {
   border: 1px solid #d9e0e8;
   box-shadow: 0 12px 34px rgba(15, 23, 42, .20);
   animation: authCardIn .78s cubic-bezier(.22, 1, .36, 1) .22s both;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+}
+
+.auth-card::before {
+  content: "";
+  position: absolute;
+  inset: -45% -22% auto auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, .18), transparent 68%);
+  opacity: 0;
+  transform: scale(.78);
+  filter: blur(10px);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.auth-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(37, 99, 235, .26);
+  box-shadow: 0 22px 52px rgba(15, 23, 42, .22), 0 0 0 4px rgba(37, 99, 235, .035);
+}
+
+.auth-card:hover::before {
+  opacity: 1;
+  transform: scale(1.15);
 }
 
 .auth-heading {
@@ -272,12 +303,23 @@ a {
   font-weight: 500;
   font-size: 16px;
   color: #475569;
+  transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
 .auth-tabs .active {
   background: white;
   color: #020617;
   box-shadow: 0 1px 2px rgba(15, 23, 42, .12), 0 2px 8px rgba(15, 23, 42, .08);
+}
+
+.auth-tabs button:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, .68);
+  transform: translateY(-1px);
+}
+
+.auth-tabs button:active {
+  transform: scale(.985);
 }
 
 .form-stack {
@@ -411,6 +453,61 @@ input:focus {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, .34);
+  backdrop-filter: blur(10px);
+  animation: modalBackdropIn .22s ease both;
+}
+
+.auth-confirm-modal {
+  width: min(430px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(226, 232, 240, .95);
+  border-radius: 18px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, .24);
+  text-align: center;
+  animation: confirmModalIn .34s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.confirm-icon {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.auth-confirm-modal h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.auth-confirm-modal p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.auth-confirm-modal .confirm-note {
+  margin: 12px 0 20px;
+  color: #334155;
+  font-size: 14px;
 }
 
 .app {
@@ -1610,6 +1707,26 @@ code,
     opacity: 1;
     transform: translateY(0) scale(1);
     box-shadow: 0 12px 34px rgba(15, 23, 42, .20);
+  }
+}
+
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirmModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

@@ -79,6 +79,7 @@ function LoginView({ onLogin, transition }: { onLogin: (user: SessionUser) => vo
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [signupNotice, setSignupNotice] = useState(false);
 
   async function handleGoogle() {
     const supabase = getSupabaseBrowser();
@@ -97,29 +98,60 @@ function LoginView({ onLogin, transition }: { onLogin: (user: SessionUser) => vo
 
   async function handleEmail(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const email = String(form.get("email") || "");
     const password = String(form.get("password") || "");
     const fullName = String(form.get("fullName") || email.split("@")[0] || "User");
     const supabase = getSupabaseBrowser();
 
     if (!supabase) {
+      if (mode === "signup") {
+        setSignupNotice(true);
+        setMode("signin");
+        formElement.reset();
+        return;
+      }
       onLogin({ name: fullName || "Admin Kantor", email: email || "admin@kantor.local", role: "admin", provider: "demo" });
       return;
     }
 
     setBusy(true);
-    const result =
-      mode === "signin"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin } });
+    const result = mode === "signin"
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin } });
     setBusy(false);
 
     if (result.error) {
       setMessage(result.error.message);
       return;
     }
-    onLogin({ name: fullName, email, role: "employee", provider: "supabase" });
+
+    if (mode === "signup") {
+      await supabase.auth.signOut();
+      setMessage("");
+      setSignupNotice(true);
+      setMode("signin");
+      formElement.reset();
+      return;
+    }
+
+    const user = result.data.user;
+    let profileName = user?.user_metadata?.full_name || "";
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", user.id)
+        .maybeSingle();
+      profileName = profile?.full_name || profileName;
+    }
+    onLogin({
+      name: profileName || user?.email?.split("@")[0] || email.split("@")[0] || "User",
+      email: user?.email || email,
+      role: "employee",
+      provider: "supabase"
+    });
   }
 
   return (
@@ -193,6 +225,21 @@ function LoginView({ onLogin, transition }: { onLogin: (user: SessionUser) => vo
           </button>
           {message ? <p className="auth-message">{message}</p> : null}
         </div>
+        {signupNotice ? (
+          <div className="auth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-email-title">
+            <div className="auth-confirm-modal">
+              <span className="confirm-icon">✓</span>
+              <h3 id="confirm-email-title">Konfirmasi Email Diperlukan</h3>
+              <p>
+                Akun berhasil dibuat. Silakan buka email Anda dan klik tautan konfirmasi dari Supabase sebelum masuk ke dashboard.
+              </p>
+              <p className="confirm-note">
+                Setelah email terkonfirmasi, kembali ke halaman ini lalu masuk melalui tab <b>Sign in</b> menggunakan email dan password yang sama.
+              </p>
+              <button type="button" className="primary-btn" onClick={() => setSignupNotice(false)}>Saya mengerti</button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </main>
   );
@@ -497,9 +544,23 @@ export default function App() {
     load();
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data: auth }) => {
+    supabase.auth.getSession().then(async ({ data: auth }) => {
       const user = auth.session?.user;
-      if (user) setSession({ name: user.user_metadata?.full_name || user.email || "User", email: user.email || "", role: "employee", provider: "supabase" });
+      if (user) {
+        let profileName = user.user_metadata?.full_name || "";
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .maybeSingle();
+        profileName = profile?.full_name || profileName;
+        setSession({
+          name: profileName || user.email?.split("@")[0] || "User",
+          email: profile?.email || user.email || "",
+          role: "employee",
+          provider: "supabase"
+        });
+      }
     });
   }, []);
 
