@@ -44,6 +44,12 @@ a {
   display: grid;
   grid-template-columns: 55vw 1fr;
   background: #ffffff;
+  animation: authShellIn .78s cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: center;
+}
+
+.auth-shell.auth-exit {
+  animation: authShellOut .42s cubic-bezier(.4, 0, .2, 1) both;
 }
 
 .auth-hero {
@@ -63,12 +69,13 @@ a {
 .restaurant-brand {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 16px;
+  animation: brandReveal .72s cubic-bezier(.22, 1, .36, 1) .08s both;
 }
 
 .restaurant-brand img {
-  width: 102px;
-  height: 102px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
@@ -81,17 +88,18 @@ a {
 }
 
 .restaurant-brand b {
-  font-size: 26px;
-  line-height: 1.15;
-  letter-spacing: .02em;
+  font-size: 18px;
+  line-height: 1.12;
+  letter-spacing: .01em;
   font-weight: 900;
 }
 
 .restaurant-brand span {
-  margin-top: 8px;
-  font-size: 22px;
+  margin-top: 6px;
+  font-size: 14px;
   line-height: 1.2;
-  font-weight: 800;
+  letter-spacing: .004em;
+  font-weight: 750;
 }
 
 .brand-mark {
@@ -125,6 +133,7 @@ a {
 
 .restaurant-copy {
   transform: translateY(42px);
+  animation: heroCopyIn .86s cubic-bezier(.22, 1, .36, 1) .16s both;
 }
 
 .restaurant-copy p {
@@ -148,6 +157,7 @@ a {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 40px;
+  animation: infoCardsIn .82s cubic-bezier(.22, 1, .36, 1) .24s both;
 }
 
 .restaurant-info-grid div {
@@ -207,6 +217,7 @@ a {
   place-items: center;
   padding: 34px;
   background: #ffffff;
+  animation: panelFadeIn .72s cubic-bezier(.22, 1, .36, 1) .1s both;
 }
 
 .auth-card {
@@ -217,6 +228,7 @@ a {
   background: var(--panel);
   border: 1px solid #d9e0e8;
   box-shadow: 0 12px 34px rgba(15, 23, 42, .20);
+  animation: authCardIn .78s cubic-bezier(.22, 1, .36, 1) .22s both;
 }
 
 .auth-heading {
@@ -406,6 +418,14 @@ input:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   background: var(--bg);
+}
+
+.app.app-enter {
+  animation: appEnter .56s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.app.app-exit {
+  animation: appExit .38s cubic-bezier(.4, 0, .2, 1) both;
 }
 
 .app.dark {
@@ -1501,6 +1521,135 @@ code,
   color: #60a5fa;
 }
 
+@keyframes authShellIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes authShellOut {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(.985);
+  }
+}
+
+@keyframes brandReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroCopyIn {
+  from {
+    opacity: 0;
+    transform: translateY(72px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(42px);
+  }
+}
+
+@keyframes infoCardsIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobileFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes authCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(.98);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .10);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 12px 34px rgba(15, 23, 42, .20);
+  }
+}
+
+@keyframes appEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.992);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes appExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(.992);
+    filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}
+
 @media (max-width: 1180px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -1532,20 +1681,21 @@ code,
   }
 
   .restaurant-brand img {
-    width: 76px;
-    height: 76px;
+    width: 58px;
+    height: 58px;
   }
 
   .restaurant-brand b {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .restaurant-brand span {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .restaurant-copy {
     transform: none;
+    animation: mobileFadeUp .72s cubic-bezier(.22, 1, .36, 1) .14s both;
   }
 
   .auth-hero h1 {

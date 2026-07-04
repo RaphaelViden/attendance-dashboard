@@ -75,7 +75,7 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function LoginView({ onLogin }: { onLogin: (user: SessionUser) => void }) {
+function LoginView({ onLogin, transition }: { onLogin: (user: SessionUser) => void; transition: string }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -123,7 +123,7 @@ function LoginView({ onLogin }: { onLogin: (user: SessionUser) => void }) {
   }
 
   return (
-    <main className="auth-shell">
+    <main className={`auth-shell ${transition === "to-app" ? "auth-exit" : ""}`}>
       <section className="auth-hero" aria-label="Bakmi Nikmat Rasa HRIS">
         <div className="restaurant-brand">
           <img src="/logo-bakmi.png" alt="Bakmi Nikmat Rasa" />
@@ -428,6 +428,7 @@ export default function App() {
   const [dark, setDark] = useState(false);
   const [query, setQuery] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [transition, setTransition] = useState<"idle" | "to-app" | "app-enter" | "to-login">("idle");
 
   async function load() {
     const supabase = getSupabaseBrowser();
@@ -515,16 +516,30 @@ export default function App() {
     };
   }, [data, query]);
 
-  if (!session) return <LoginView onLogin={setSession} />;
+  function handleLogin(user: SessionUser) {
+    setTransition("to-app");
+    window.setTimeout(() => {
+      setSession(user);
+      setTransition("app-enter");
+      window.setTimeout(() => setTransition("idle"), 520);
+    }, 420);
+  }
+
+  if (!session) return <LoginView onLogin={handleLogin} transition={transition} />;
 
   async function handleSignOut() {
+    setTransition("to-login");
+    setProfileOpen(false);
     const supabase = getSupabaseBrowser();
     await supabase?.auth.signOut();
-    setSession(null);
+    window.setTimeout(() => {
+      setSession(null);
+      setTransition("idle");
+    }, 380);
   }
 
   return (
-    <div className={`${dark ? "app dark" : "app"} ${menuOpen ? "nav-open" : "nav-closed"}`}>
+    <div className={`${dark ? "app dark" : "app"} ${menuOpen ? "nav-open" : "nav-closed"} ${transition === "app-enter" ? "app-enter" : ""} ${transition === "to-login" ? "app-exit" : ""}`}>
       <aside className={menuOpen ? "sidebar open" : "sidebar"}>
         <div className="side-brand"><span><Fingerprint size={19} /></span><div><b>Attendify HRIS</b><small>Attendance System</small></div></div>
         <nav>
