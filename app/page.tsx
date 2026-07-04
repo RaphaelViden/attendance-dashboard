@@ -124,52 +124,75 @@ function LoginView({ onLogin }: { onLogin: (user: SessionUser) => void }) {
 
   return (
     <main className="auth-shell">
-      <section className="auth-card">
-        <div className="auth-heading">
-          <h2>Welcome</h2>
-          <p>Sign in or create your HRIS account.</p>
-        </div>
-        <div className="auth-tabs">
-          <button className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
-          <button className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
+      <section className="auth-hero" aria-label="Bakmi Nikmat Rasa HRIS">
+        <div className="restaurant-brand">
+          <img src="/logo-bakmi.png" alt="Bakmi Nikmat Rasa" />
+          <div>
+            <b>BAKMI NIKMAT RASA</b>
+            <span>Human Resource Information System</span>
+          </div>
         </div>
 
-        <form onSubmit={handleEmail} className="form-stack">
-          {mode === "signup" ? (
+        <div className="restaurant-copy">
+          <h1>Smart Attendance Management with RFID Systems</h1>
+          <p>"Rasanya otentik dijaga selama 3 generasi, kalau udah cobain sekali, kamu bakal balik lagi tanpa disuruh."</p>
+        </div>
+
+        <div className="restaurant-info-grid">
+          <div><span>Location</span><b>DEMANGAN YOGYA</b></div>
+          <div><span>Contact Info</span><b>0813-2981-2575</b></div>
+          <div><span>Develop by</span><b>RAFAEL VIDENTIO S</b></div>
+        </div>
+      </section>
+
+      <section className="auth-panel">
+        <div className="auth-card">
+          <div className="auth-heading">
+            <h2>Welcome</h2>
+            <p>Sign in or create your HRIS account.</p>
+          </div>
+          <div className="auth-tabs">
+            <button className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
+            <button className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
+          </div>
+
+          <form onSubmit={handleEmail} className="form-stack">
+            {mode === "signup" ? (
+              <label>
+                Nama lengkap
+                <input name="fullName" required />
+              </label>
+            ) : null}
             <label>
-              Nama lengkap
-              <input name="fullName" required />
+              Email
+              <input name="email" type="email" required />
             </label>
-          ) : null}
-          <label>
-            Email
-            <input name="email" type="email" required />
-          </label>
-          <label>
-            Password
-            <input name="password" type="password" required />
-          </label>
-          <button className="primary-btn" disabled={busy} type="submit">
-            {mode === "signin" ? "Sign in" : "Create account"}
-          </button>
-        </form>
+            <label>
+              Password
+              <input name="password" type="password" required />
+            </label>
+            <button className="primary-btn" disabled={busy} type="submit">
+              {mode === "signin" ? "Sign in" : "Create account"}
+            </button>
+          </form>
 
-        <div className="divider"><span>OR</span></div>
-        <button className="outline-btn" disabled={busy} onClick={handleGoogle}>
-          <span className="google-dot" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path fill="#4285F4" d="M21.6 12.23c0-.72-.06-1.24-.18-1.78H12v3.24h5.53c-.11.8-.72 2.01-2.07 2.82l-.02.11 3 2.26.21.02c1.93-1.74 2.95-4.3 2.95-6.67z" />
-              <path fill="#34A853" d="M12 21.75c2.76 0 5.07-.88 6.76-2.4l-3.22-2.48c-.86.58-2.02.99-3.54.99-2.7 0-4.99-1.74-5.8-4.15l-.12.01-3.12 2.35-.04.11c1.68 3.25 5.12 5.57 9.08 5.57z" />
-              <path fill="#FBBC05" d="M6.2 13.71a5.89 5.89 0 0 1-.31-1.86c0-.65.11-1.28.3-1.86l-.01-.13-3.16-2.39-.1.05A9.53 9.53 0 0 0 1.9 11.85c0 1.55.38 3.02 1.02 4.32l3.28-2.46z" />
-              <path fill="#EB4335" d="M12 5.84c1.92 0 3.21.8 3.95 1.47l2.88-2.74C17.06 2.97 14.76 2 12 2 8.04 2 4.6 4.32 2.92 7.52l3.27 2.47c.82-2.41 3.11-4.15 5.81-4.15z" />
-            </svg>
-          </span>
-          Continue with Google
-        </button>
-        <button className="ghost-btn auth-demo" onClick={() => onLogin({ name: "Admin Kantor", email: "admin@kantor.local", role: "admin", provider: "demo" })}>
-          Demo Admin Lokal
-        </button>
-        {message ? <p className="auth-message">{message}</p> : null}
+          <div className="divider"><span>OR</span></div>
+          <button className="outline-btn" disabled={busy} onClick={handleGoogle}>
+            <span className="google-dot" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="#4285F4" d="M21.6 12.23c0-.72-.06-1.24-.18-1.78H12v3.24h5.53c-.11.8-.72 2.01-2.07 2.82l-.02.11 3 2.26.21.02c1.93-1.74 2.95-4.3 2.95-6.67z" />
+                <path fill="#34A853" d="M12 21.75c2.76 0 5.07-.88 6.76-2.4l-3.22-2.48c-.86.58-2.02.99-3.54.99-2.7 0-4.99-1.74-5.8-4.15l-.12.01-3.12 2.35-.04.11c1.68 3.25 5.12 5.57 9.08 5.57z" />
+                <path fill="#FBBC05" d="M6.2 13.71a5.89 5.89 0 0 1-.31-1.86c0-.65.11-1.28.3-1.86l-.01-.13-3.16-2.39-.1.05A9.53 9.53 0 0 0 1.9 11.85c0 1.55.38 3.02 1.02 4.32l3.28-2.46z" />
+                <path fill="#EB4335" d="M12 5.84c1.92 0 3.21.8 3.95 1.47l2.88-2.74C17.06 2.97 14.76 2 12 2 8.04 2 4.6 4.32 2.92 7.52l3.27 2.47c.82-2.41 3.11-4.15 5.81-4.15z" />
+              </svg>
+            </span>
+            Continue with Google
+          </button>
+          <button className="ghost-btn auth-demo" onClick={() => onLogin({ name: "Admin Kantor", email: "admin@kantor.local", role: "admin", provider: "demo" })}>
+            Demo Admin Lokal
+          </button>
+          {message ? <p className="auth-message">{message}</p> : null}
+        </div>
       </section>
     </main>
   );
