@@ -510,6 +510,23 @@ input:focus {
   font-size: 14px;
 }
 
+.confirm-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.auth-confirm-modal .outline-btn,
+.auth-confirm-modal .primary-btn {
+  width: 100%;
+  min-height: 42px;
+}
+
+.modal-message {
+  margin: 14px 0 0;
+  text-align: left;
+}
+
 .app {
   min-height: 100vh;
   display: grid;
@@ -1996,30 +2013,7 @@ code,
   text-shadow: 0 10px 30px rgba(2, 6, 23, .26);
 }
 
-.hero-login-cta {
-  margin-top: 28px;
-  min-width: 148px;
-  min-height: 48px;
-  padding: 0 24px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #173a8d, #0f2f7d);
-  color: #ffffff;
-  box-shadow: 0 18px 42px rgba(6, 24, 72, .38), inset 0 1px 0 rgba(255, 255, 255, .18);
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: .035em;
-  cursor: pointer;
-  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
-}
 
-.hero-login-cta:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
-  box-shadow: 0 24px 52px rgba(6, 24, 72, .46), 0 0 0 5px rgba(255, 255, 255, .08), inset 0 1px 0 rgba(255, 255, 255, .2);
-}
-
-.hero-login-cta:active,
 .primary-btn:active,
 .outline-btn:active,
 .auth-tabs button:active {
@@ -2340,11 +2334,6 @@ input:focus {
 
   .restaurant-copy p {
     font-size: 14px;
-  }
-
-  .hero-login-cta {
-    min-width: 136px;
-    min-height: 44px;
   }
 
   .auth-card {

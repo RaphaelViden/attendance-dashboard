@@ -45,6 +45,12 @@ type AuthMessage = {
   text: string;
 };
 
+type SignupNotice = {
+  email: string;
+  requiresConfirmation: boolean;
+  resendStatus?: AuthMessage | null;
+};
+
 function mapAuthError(errorMessage?: string): AuthMessage {
   const message = (errorMessage || "").toLowerCase();
 
@@ -102,6 +108,15 @@ const employeeAccessError: AuthMessage = {
   title: "Employee access required",
   text: "This account is not registered as an active employee. Contact HR to request access.",
 };
+
+function isEmailConfirmed(user: any) {
+  return Boolean(
+    user?.email_confirmed_at ||
+      user?.confirmed_at ||
+      user?.app_metadata?.provider === "google" ||
+      user?.identities?.some((identity: any) => identity?.provider === "google"),
+  );
+}
 
 async function resolveSupabaseSessionUser(
   supabase: any,
@@ -193,7 +208,8 @@ function LoginView({
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<AuthMessage | null>(null);
-  const [signupNotice, setSignupNotice] = useState(false);
+  const [signupNotice, setSignupNotice] = useState<SignupNotice | null>(null);
+  const [resendBusy, setResendBusy] = useState(false);
   const [emailValue, setEmailValue] = useState("");
 
   useEffect(() => {
@@ -203,13 +219,9 @@ function LoginView({
   function switchMode(nextMode: "signin" | "signup") {
     setMode(nextMode);
     setMessage(null);
-    setSignupNotice(false);
+    setSignupNotice(null);
   }
 
-  function focusLogin() {
-    const field = document.getElementById("auth-email");
-    field?.focus();
-  }
 
   async function handleGoogle() {
     const supabase = getSupabaseBrowser();
@@ -291,7 +303,15 @@ function LoginView({
 
     if (!supabase) {
       if (mode === "signup") {
-        setSignupNotice(true);
+        setSignupNotice({
+          email,
+          requiresConfirmation: false,
+          resendStatus: {
+            tone: "info",
+            title: "Supabase is not configured",
+            text: "Account activation requires Supabase Auth. Configure Supabase before using production registration.",
+          },
+        });
         setMode("signin");
         formElement.reset();
         setEmailValue("");
@@ -319,7 +339,7 @@ function LoginView({
     setBusy(true);
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -335,8 +355,13 @@ function LoginView({
         return;
       }
 
+      const requiresConfirmation = !data.session && !isEmailConfirmed(data.user);
       setMessage(null);
-      setSignupNotice(true);
+      setSignupNotice({
+        email,
+        requiresConfirmation,
+        resendStatus: null,
+      });
       setMode("signin");
       formElement.reset();
       setEmailValue("");
@@ -355,7 +380,7 @@ function LoginView({
     }
 
     const user = authData.user;
-    if (!user?.email_confirmed_at) {
+    if (!isEmailConfirmed(user)) {
       await supabase.auth.signOut();
       setBusy(false);
       setMessage(mapAuthError("Email not confirmed"));
@@ -377,6 +402,50 @@ function LoginView({
       text: "Preparing your dashboard...",
     });
     window.setTimeout(() => onLogin(resolved.sessionUser!), 430);
+  }
+
+  async function handleResendConfirmation() {
+    if (!signupNotice?.email) return;
+    const supabase = getSupabaseBrowser();
+
+    if (!supabase) {
+      setSignupNotice((current) =>
+        current
+          ? {
+              ...current,
+              resendStatus: {
+                tone: "info",
+                title: "Supabase is not configured",
+                text: "Verification email cannot be sent until Supabase Auth is configured.",
+              },
+            }
+          : current,
+      );
+      return;
+    }
+
+    setResendBusy(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: signupNotice.email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResendBusy(false);
+
+    setSignupNotice((current) =>
+      current
+        ? {
+            ...current,
+            resendStatus: error
+              ? mapAuthError(error.message)
+              : {
+                  tone: "success",
+                  title: "Verification email resent",
+                  text: "A new verification link has been requested. Check your inbox, spam, or promotions folder.",
+                },
+          }
+        : current,
+    );
   }
 
   const submitText = busy
@@ -406,9 +475,6 @@ function LoginView({
             "Rasanya otentik dijaga selama 3 generasi, kalau udah cobain sekali,
             kamu bakal balik lagi tanpa disuruh."
           </p>
-          <button type="button" className="hero-login-cta" onClick={focusLogin}>
-            LOGIN NOW
-          </button>
         </div>
 
         <div className="restaurant-info-grid" aria-label="Office information">
@@ -570,22 +636,50 @@ function LoginView({
           >
             <div className="auth-confirm-modal">
               <span className="confirm-icon">✓</span>
-              <h3 id="confirm-email-title">Check your email</h3>
+              <h3 id="confirm-email-title">
+                {signupNotice.requiresConfirmation
+                  ? "Verify your email"
+                  : "Account created"}
+              </h3>
               <p>
-                Your account has been created. Please open your email and
-                confirm the verification link before accessing the dashboard.
+                {signupNotice.requiresConfirmation
+                  ? `A verification link has been sent to ${signupNotice.email}. Open the email and confirm your account before signing in.`
+                  : "Your account has been created. Email verification is not required by the current Supabase configuration."}
               </p>
               <p className="confirm-note">
-                After verification, return to this page and sign in again using
-                the same email and password.
+                Return to the Sign In tab and enter the same email and password
+                after the account is verified.
               </p>
-              <button
-                type="button"
-                className="primary-btn"
-                onClick={() => setSignupNotice(false)}
-              >
-                Back to Sign In
-              </button>
+              {signupNotice.resendStatus ? (
+                <div
+                  className={`auth-message modal-message ${signupNotice.resendStatus.tone}`}
+                  role="status"
+                >
+                  {signupNotice.resendStatus.title ? (
+                    <b>{signupNotice.resendStatus.title}</b>
+                  ) : null}
+                  <span>{signupNotice.resendStatus.text}</span>
+                </div>
+              ) : null}
+              <div className="confirm-actions">
+                {signupNotice.requiresConfirmation ? (
+                  <button
+                    type="button"
+                    className="outline-btn"
+                    disabled={resendBusy}
+                    onClick={handleResendConfirmation}
+                  >
+                    {resendBusy ? "Sending..." : "Resend verification email"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={() => setSignupNotice(null)}
+                >
+                  Back to Sign In
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -1116,6 +1210,12 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: auth }) => {
       const user = auth.session?.user;
       if (!user) return;
+
+      if (!isEmailConfirmed(user)) {
+        await supabase.auth.signOut();
+        setAuthNotice(mapAuthError("Email not confirmed"));
+        return;
+      }
 
       const resolved = await resolveSupabaseSessionUser(supabase, user);
       if (resolved.error || !resolved.sessionUser) {

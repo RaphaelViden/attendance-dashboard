@@ -167,3 +167,21 @@ Urutan tap otomatis:
 ## Catatan Production
 
 Versi ini punya demo-memory store agar langsung bisa dicoba lokal dan di Vercel. Untuk production kantor, data sebaiknya dipindah penuh ke Supabase menggunakan schema di `supabase/schema.sql`, lalu API route diarahkan ke Supabase database.
+
+## Catatan Email Verification
+
+Flow aktivasi akun sudah dibuat defensif:
+
+- Setelah `Activate Account`, user tidak langsung masuk ke dashboard.
+- Jika Supabase meminta email confirmation, modal akan menampilkan instruksi verifikasi email dan tombol `Resend verification email`.
+- Jika Supabase tidak meminta email confirmation, modal tidak lagi menyuruh user menunggu email yang memang tidak dikirim.
+- Setelah verifikasi atau setelah akun dibuat, user tetap harus masuk ulang melalui tab `Sign In`.
+
+Jika email tetap tidak masuk setelah tombol resend digunakan, periksa pengaturan Supabase Auth:
+
+1. Authentication > Providers > Email.
+2. Pastikan email signup dan confirmation sesuai kebutuhan.
+3. Authentication > URL Configuration.
+4. Pastikan Site URL dan Redirect URLs berisi domain Vercel production serta localhost untuk testing.
+5. Periksa folder Spam/Promotions di Gmail.
+6. Untuk penggunaan production, gunakan SMTP custom agar pengiriman email lebih stabil.
